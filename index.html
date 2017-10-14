@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/Chart.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <button id="btnClear">clear</button>
+    <style>
+        #chart {
+            padding: 5px;
+            border: solid black 5px;
+            float: right !important;
+            width: calc(100% - 180px) !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+<p>DEMO</p>
+<canvas id="canvasDiv" width="140px" height="140px" style="border: solid black 5px">
+</canvas>
+<canvas id="chart"></canvas>
+<script>
+    canvas = document.getElementById("canvasDiv");
+    context = canvas.getContext("2d");
+    down = false;
+    lx = 0;
+    ly = 0;
+    function indexOfMax(arr) {
+        if (arr.length === 0) {
+            return -1;
+        }
+
+        var max = arr[0];
+        var maxIndex = 0;
+
+        for (var i = 1; i < arr.length; i++) {
+            if (arr[i] > max) {
+                maxIndex = i;
+                max = arr[i];
+            }
+        }
+
+        return maxIndex;
+    }
+    $('#btnClear').click(function () {
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        window.chart.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        window.chart.update();
+    });
+    $('#btnTest').click(function () {
+        $.ajax({
+            url: "api",
+            type: "POST",
+            data: JSON.stringify([toArray()]),
+            contentType: "application/json",
+            success: function (result) {
+                console.log(result);
+                window.chart.data.datasets[0].data = JSON.parse(result)[0]
+            }
+        })
+    });
+    $('#canvasDiv').mousemove(function (e) {
+        var mouseX = e.pageX - this.offsetLeft;
+        var mouseY = e.pageY - this.offsetTop;
+        if (down) {
+            redraw(mouseX, mouseY)
+        }
+        lx = mouseX;
+        ly = mouseY;
+    });
+    $('#canvasDiv').mouseleave(function () {
+        down = false;
+        $.ajax({
+            url: "api",
+            type: "POST",
+            data: JSON.stringify([toArray()]),
+            contentType: "application/json",
+            success: function (result) {
+                console.log(result);
+                window.chart.data.datasets[0].data = JSON.parse(result)[0]
+                window.chart.update()
+            }
+        })
+    })
+    $('#canvasDiv').mousedown(function () {
+        down = true;
+    });
+    $('#canvasDiv').mouseup(function () {
+        down = false;
+        $.ajax({
+            url: "api",
+            type: "POST",
+            data: JSON.stringify([toArray()]),
+            contentType: "application/json",
+            success: function (result) {
+                console.log(result);
+                window.chart.data.datasets[0].data = JSON.parse(result)[0]
+                window.chart.update()
+            }
+        })
+    });
+
+    function redraw(x, y) {
+
+        context.beginPath()
+        context.strokeStyle = "#000000";
+        context.lineJoin = "round";
+        context.lineWidth = 10;
+        context.moveTo(lx, ly);
+        context.lineTo(x, y);
+        context.closePath();
+        context.stroke();
+    }
+    numberData = [];
+    function toArray() {
+        numberData = [];
+        for (var i = 0; i < 140; i += 5) {
+            var temp = [];
+            for (var o = 0; o < 140; o += 5) {
+                var data = context.getImageData(o, i, 5, 5);
+                var total = 0;
+                for (w = 0; w < data.data.length - 1; w++);
+                total += data.data[w];
+                temp.push([Math.floor(total / data.data.length) * 1.0])
+            }
+            numberData.push(temp)
+        }
+        return numberData
+    }
+</script>
+<script>
+    var ctx = document.getElementById("chart");
+    window.chart = new Chart(ctx, {
+        // The type of chart we want to create
+        type: 'bar',
+
+        // The data for our dataset
+        data: {
+            labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            datasets: [{
+                label: "Confidence rating",
+                backgroundColor: 'rgba(5, 5, 5, 0.1)',
+                borderColor: 'rgba(5, 5, 5, 0.4)',
+                borderWidth: 1,
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            }]
+        },
+
+        // Configuration options go here
+        options: {
+            legend: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                }]
+            }
+        }
+    });
+</script>
+</body>
+</html>
